@@ -53,6 +53,8 @@ fn main() {
             println!("cargo:rustc-link-lib=framework=IOBluetooth");
             println!("cargo:rustc-link-lib=framework=CoreFoundation");
             println!("cargo:rustc-link-lib=framework=Foundation");
+            println!("cargo:rustc-link-lib=framework=CoreBluetooth");
+            println!("cargo:rustc-link-lib=framework=IOKit");
         }
 
         "linux" => {
