@@ -1,14 +1,14 @@
-pub mod wiimote;
+#![allow(non_camel_case_types)]
+#![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
 
-use wiimote::Wiimote;
+include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-pub fn run() -> Result<(), String> {
-    let mut remote = Wiimote::connect()?;
 
-    println!("Connected!");
-    println!("Reading accelerometer values. Press Ctrl+C to stop.\n");
+/// Safe Rust value types and state snapshot accessors.
+pub mod state;
 
-    remote.read_loop();
-
-    Ok(())
-}
+pub use state::{
+    Accelerometer, ButtonState, NunchukButtons, NunchukState, WiimoteButtons,
+    WiimoteState, get_state,
+};

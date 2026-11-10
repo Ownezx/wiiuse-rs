@@ -37,9 +37,9 @@ Install:
 
 cargo build
 
-## Run
+## Examples
 
-cargo run
+- `cargo run --example single_remote`
 
 ## License
 

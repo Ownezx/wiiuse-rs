@@ -2,9 +2,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use wiiuse_rs::{
-    get_state, rust_wiiuse_cleanup, rust_wiiuse_connect, rust_wiiuse_find,
-    rust_wiiuse_init, rust_wiiuse_motion_sensing, rust_wiiuse_poll,
-    WiimoteButtons,
+    get_state, rust_wiiuse_cleanup, rust_wiiuse_connect, rust_wiiuse_find, rust_wiiuse_init,
+    rust_wiiuse_motion_sensing, rust_wiiuse_poll, WiimoteButtons,
 };
 
 const MAX_WIIMOTES: i32 = 1;
@@ -39,9 +38,7 @@ fn main() {
         return;
     }
 
-    let found = unsafe {
-        rust_wiiuse_find(devices, MAX_WIIMOTES, FIND_TIMEOUT_SECONDS)
-    };
+    let found = unsafe { rust_wiiuse_find(devices, MAX_WIIMOTES, FIND_TIMEOUT_SECONDS) };
     if found <= 0 {
         eprintln!("No Wii Remote found.");
         unsafe { rust_wiiuse_cleanup(devices, MAX_WIIMOTES) };

@@ -4,8 +4,8 @@ use std::path::PathBuf;
 fn main() {
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    let project_root = manifest.parent().unwrap();
-    let wiiuse_dir = project_root.join("vendor/wiiuse");
+    // The crate root is now the project root.
+    let wiiuse_dir = manifest.join("vendor/wiiuse");
     let wiiuse_src = wiiuse_dir.join("src");
 
     let header = manifest.join("src/wiiuse_shim.h");
@@ -13,15 +13,16 @@ fn main() {
     let state_shim = manifest.join("src/wiiuse_state_shim.c");
 
     if !wiiuse_dir.join("CMakeLists.txt").exists() {
-        panic!(
-            "wiiuse submodule missing. Run: \
-             git submodule update --init --recursive"
-        );
+        panic!("wiiuse source missing: {}", wiiuse_dir.display());
     }
 
     println!("cargo:rerun-if-changed={}", header.display());
     println!("cargo:rerun-if-changed={}", shim.display());
     println!("cargo:rerun-if-changed={}", state_shim.display());
+    println!(
+        "cargo:rerun-if-changed={}",
+        wiiuse_dir.join("CMakeLists.txt").display()
+    );
     println!("cargo:rerun-if-changed={}", wiiuse_src.display());
 
     // Build upstream wiiuse.
@@ -47,7 +48,6 @@ fn main() {
         "cargo:rustc-link-search=native={}",
         dst.join("lib").display()
     );
-
     println!("cargo:rustc-link-lib=static=wiiuse");
 
     // Platform-specific native dependencies.
@@ -59,18 +59,15 @@ fn main() {
             println!("cargo:rustc-link-lib=framework=CoreBluetooth");
             println!("cargo:rustc-link-lib=framework=IOKit");
         }
-
         "linux" => {
             println!("cargo:rustc-link-lib=bluetooth");
             println!("cargo:rustc-link-lib=m");
             println!("cargo:rustc-link-lib=rt");
         }
-
         "windows" => {
             println!("cargo:rustc-link-lib=ws2_32");
             println!("cargo:rustc-link-lib=setupapi");
         }
-
         other => {
             panic!("Unsupported target OS: {}", other);
         }

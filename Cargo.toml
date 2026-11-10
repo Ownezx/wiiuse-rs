@@ -1,7 +1,13 @@
 [package]
-name = "wiimote-osc"
+name = "wiiuse-rs"
 version = "0.1.0"
 edition = "2021"
+links = "wiiuse"
+build = "build.rs"
 
 [dependencies]
-wiiuse-rs = { path = "wiiuse-rs" }
+
+[build-dependencies]
+bindgen = "0.72"
+cmake = "0.1"
+cc = "1"
