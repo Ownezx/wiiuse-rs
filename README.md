@@ -13,10 +13,9 @@ Rust wrapper around the native wiiuse library.
 
 brew install cmake llvm
 
-export LIBCLANG_PATH="$(brew --prefix llvm)/lib"
-
 ### Linux
 
+(Not checked LLM generated)
 Install CMake, Clang, BlueZ development headers
 and a C compiler.
 
@@ -27,6 +26,7 @@ libbluetooth-dev build-essential
 
 ### Windows
 
+(Not checked LLM generated)
 Install:
 
 - Visual Studio C++ Build Tools
@@ -40,10 +40,6 @@ cargo build
 ## Run
 
 cargo run
-
-## Example
-
-cargo run --example accelerometer
 
 ## License
 
