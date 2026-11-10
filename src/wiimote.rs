@@ -3,7 +3,7 @@ use std::ptr;
 use std::thread;
 use std::time::Duration;
 
-use wiiuse_sys::*;
+use wiiuse_rs::*;
 
 #[derive(Debug)]
 pub struct Accelerometer {

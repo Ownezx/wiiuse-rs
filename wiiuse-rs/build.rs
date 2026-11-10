@@ -10,6 +10,7 @@ fn main() {
 
     let header = manifest.join("src/wiiuse_shim.h");
     let shim = manifest.join("src/wiiuse_shim.c");
+    let state_shim = manifest.join("src/wiiuse_state_shim.c");
 
     if !wiiuse_dir.join("CMakeLists.txt").exists() {
         panic!(
@@ -20,6 +21,7 @@ fn main() {
 
     println!("cargo:rerun-if-changed={}", header.display());
     println!("cargo:rerun-if-changed={}", shim.display());
+    println!("cargo:rerun-if-changed={}", state_shim.display());
     println!("cargo:rerun-if-changed={}", wiiuse_src.display());
 
     // Build upstream wiiuse.
@@ -34,6 +36,7 @@ fn main() {
     // Compile the C shim.
     cc::Build::new()
         .file(&shim)
+        .file(&state_shim)
         .include(&wiiuse_src)
         .include(manifest.join("src"))
         .warnings(true)
@@ -77,6 +80,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header(header.to_string_lossy())
         .allowlist_function("rust_wiiuse_.*")
+        .allowlist_type("rust_wiiuse_state_t")
         .generate()
         .expect("Unable to generate wiiuse bindings");
 
