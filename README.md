@@ -8,6 +8,7 @@ Rust wrapper around the native wiiuse library.
 - CMake
 - C compiler
 - Git
+- Initialize git submodule
 
 ### macOS
 
