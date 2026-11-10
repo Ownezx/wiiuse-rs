@@ -1,0 +1,7 @@
+[package]
+name = "wiimote-osc"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wiiuse-sys = { path = "wiiuse-sys" }
