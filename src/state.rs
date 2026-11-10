@@ -1,12 +1,6 @@
-//! Typed input-state access for a connected Wii Remote and Nunchuk.
-//!
-//! Call [`get_state`] after `rust_wiiuse_poll` to copy the most recently
-//! processed state into ordinary Rust-owned values.
+//! Owned, safe Rust representations of Wii Remote and Nunchuk input state.
 
-use std::ffi::c_void;
-use std::os::raw::c_int;
-
-use crate::{rust_wiiuse_get_state, rust_wiiuse_state_t};
+use crate::ffi::RawState;
 
 /// Button bitset for the physical buttons on a standard Wii Remote.
 #[repr(transparent)]
@@ -141,9 +135,7 @@ impl ButtonState<WiimoteButtons> {
         Self {
             down,
             held,
-            just_pressed: WiimoteButtons::from_bits_truncate(
-                down.bits() & !held.bits(),
-            ),
+            just_pressed: WiimoteButtons::from_bits_truncate(down.bits() & !held.bits()),
             just_released: WiimoteButtons::from_bits_truncate(released),
         }
     }
@@ -156,9 +148,7 @@ impl ButtonState<NunchukButtons> {
         Self {
             down,
             held,
-            just_pressed: NunchukButtons::from_bits_truncate(
-                down.bits() & !held.bits(),
-            ),
+            just_pressed: NunchukButtons::from_bits_truncate(down.bits() & !held.bits()),
             just_released: NunchukButtons::from_bits_truncate(released),
         }
     }
@@ -191,89 +181,45 @@ pub struct WiimoteState {
     pub nunchuk: Option<NunchukState>,
 }
 
-/// Copies the latest state from a wiiuse device array.
-///
-/// Pass the pointer returned by `rust_wiiuse_init`, the controller index,
-/// and the total number of allocated controllers. Call this after polling.
-///
-/// # Safety
-///
-/// `devices` must be the live pointer array returned by wiiuse, `count` must
-/// be its allocated length, and the array/device must not be freed or mutated
-/// concurrently while this function reads it.
-pub unsafe fn get_state(
-    devices: *mut c_void,
-    index: usize,
-    count: usize,
-) -> Option<WiimoteState> {
-    if devices.is_null()
-        || index >= count
-        || index > c_int::MAX as usize
-        || count > c_int::MAX as usize
-    {
-        return None;
+impl WiimoteState {
+    pub(crate) fn from_raw(raw: RawState) -> Self {
+        let buttons = ButtonState::<WiimoteButtons>::from_raw(
+            raw.wiimote_buttons_down,
+            raw.wiimote_buttons_held,
+            raw.wiimote_buttons_released,
+        );
+        let accelerometer = Accelerometer {
+            raw: [raw.wiimote_accel_x, raw.wiimote_accel_y, raw.wiimote_accel_z],
+            gforce: [
+                raw.wiimote_gforce_x,
+                raw.wiimote_gforce_y,
+                raw.wiimote_gforce_z,
+            ],
+        };
+        let nunchuk = if raw.has_nunchuk != 0 {
+            Some(NunchukState {
+                buttons: ButtonState::<NunchukButtons>::from_raw(
+                    raw.nunchuk_buttons_down,
+                    raw.nunchuk_buttons_held,
+                    raw.nunchuk_buttons_released,
+                ),
+                accelerometer: Accelerometer {
+                    raw: [raw.nunchuk_accel_x, raw.nunchuk_accel_y, raw.nunchuk_accel_z],
+                    gforce: [
+                        raw.nunchuk_gforce_x,
+                        raw.nunchuk_gforce_y,
+                        raw.nunchuk_gforce_z,
+                    ],
+                },
+            })
+        } else {
+            None
+        };
+
+        Self {
+            buttons,
+            accelerometer,
+            nunchuk,
+        }
     }
-
-    // The C shim validates the index and copies the native fields into this
-    // fixed-layout FFI snapshot. It does not retain any pointers.
-    let mut raw: rust_wiiuse_state_t = unsafe { std::mem::zeroed() };
-    let result = unsafe {
-        rust_wiiuse_get_state(
-            devices,
-            index as c_int,
-            count as c_int,
-            &mut raw,
-        )
-    };
-    if result == 0 {
-        return None;
-    }
-
-    let buttons = ButtonState::<WiimoteButtons>::from_raw(
-        raw.wiimote_buttons_down,
-        raw.wiimote_buttons_held,
-        raw.wiimote_buttons_released,
-    );
-    let accelerometer = Accelerometer {
-        raw: [
-            raw.wiimote_accel_x,
-            raw.wiimote_accel_y,
-            raw.wiimote_accel_z,
-        ],
-        gforce: [
-            raw.wiimote_gforce_x,
-            raw.wiimote_gforce_y,
-            raw.wiimote_gforce_z,
-        ],
-    };
-
-    let nunchuk = if raw.has_nunchuk != 0 {
-        Some(NunchukState {
-            buttons: ButtonState::<NunchukButtons>::from_raw(
-                raw.nunchuk_buttons_down,
-                raw.nunchuk_buttons_held,
-                raw.nunchuk_buttons_released,
-            ),
-            accelerometer: Accelerometer {
-                raw: [
-                    raw.nunchuk_accel_x,
-                    raw.nunchuk_accel_y,
-                    raw.nunchuk_accel_z,
-                ],
-                gforce: [
-                    raw.nunchuk_gforce_x,
-                    raw.nunchuk_gforce_y,
-                    raw.nunchuk_gforce_z,
-                ],
-            },
-        })
-    } else {
-        None
-    };
-
-    Some(WiimoteState {
-        buttons,
-        accelerometer,
-        nunchuk,
-    })
 }

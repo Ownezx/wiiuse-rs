@@ -1,47 +1,31 @@
-# wiimote-rust
+# wiiuse-rs
 
-Rust wrapper around the native wiiuse library.
+A Rust API around the native `wiiuse` library.
 
 ## Requirements
 
-- Rust
+- Rust and Cargo
 - CMake
-- C compiler
-- Git
-- Initialize git submodule
-
-### macOS
-
-brew install cmake llvm
-
-### Linux
-
-(Not checked LLM generated)
-Install CMake, Clang, BlueZ development headers
-and a C compiler.
-
-For Ubuntu:
-
-sudo apt install cmake clang libclang-dev \
-libbluetooth-dev build-essential
-
-### Windows
-
-(Not checked LLM generated)
-Install:
-
-- Visual Studio C++ Build Tools
-- CMake
-- LLVM/Clang
+- A C compiler
+- Clang/libclang for bindgen
+- The `vendor/wiiuse` source tree used by this repository
 
 ## Build
 
+```bash
 cargo build
+```
 
 ## Examples
 
-- `cargo run --example single_remote`
+```bash
+cargo run --example single_remote
+```
+
+The example prints button press transitions and streams accelerometer readings
+continuously at 20 Hz.
 
 ## License
 
-wiiuse is GPL-3.0-or-later.
+The native `wiiuse` library is GPL-3.0-or-later. Check the licensing terms
+before redistributing binaries or derivative works.
