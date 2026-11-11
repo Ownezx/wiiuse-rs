@@ -1,10 +1,7 @@
 use std::thread;
 use std::time::{Duration, Instant};
 
-use wiiuse_rs::{
-    get_state, rust_wiiuse_cleanup, rust_wiiuse_connect, rust_wiiuse_find, rust_wiiuse_init,
-    rust_wiiuse_motion_sensing, rust_wiiuse_poll, WiimoteButtons,
-};
+use wiiuse_rs::{WiimoteButtons, WiimoteSet};
 
 const MAX_WIIMOTES: i32 = 1;
 const FIND_TIMEOUT_SECONDS: i32 = 10;
@@ -30,31 +27,30 @@ fn main() {
     println!("Searching for Wii Remote...");
     println!("Press 1 + 2 on the controller.");
 
-    // The returned pointer is the native wiiuse device array. Keep it alive
-    // until after polling has stopped, then release it with wiiuse_cleanup.
-    let devices = unsafe { rust_wiiuse_init(MAX_WIIMOTES) };
-    if devices.is_null() {
-        eprintln!("Could not allocate Wii Remote state.");
-        return;
-    }
+    // WiimoteSet owns the native device array and cleans it up automatically.
+    let mut devices = match WiimoteSet::new(MAX_WIIMOTES as usize) {
+        Ok(devices) => devices,
+        Err(error) => {
+            eprintln!("Could not allocate Wii Remote state: {error}");
+            return;
+        }
+    };
 
-    let found = unsafe { rust_wiiuse_find(devices, MAX_WIIMOTES, FIND_TIMEOUT_SECONDS) };
-    if found <= 0 {
+    let found = devices.find(Duration::from_secs(FIND_TIMEOUT_SECONDS as u64));
+    if found == 0 {
         eprintln!("No Wii Remote found.");
-        unsafe { rust_wiiuse_cleanup(devices, MAX_WIIMOTES) };
         return;
     }
 
     println!("Found {found} Wii Remote(s). Connecting...");
-    let connected = unsafe { rust_wiiuse_connect(devices, found) };
-    if connected <= 0 {
+    let connected = devices.connect();
+    if connected == 0 {
         eprintln!("Could not connect to the Wii Remote.");
-        unsafe { rust_wiiuse_cleanup(devices, MAX_WIIMOTES) };
         return;
     }
 
     // Enable the Wii Remote accelerometer. No Nunchuk is required.
-    unsafe { rust_wiiuse_motion_sensing(devices, 0, 1) };
+    devices.motion_sensing(0, true);
 
     println!("Connected.");
     println!("Press any button to print its name.");
@@ -67,9 +63,9 @@ fn main() {
     loop {
         // Poll frequently to keep input latency low. The feed itself is
         // throttled separately so it prints at a readable 20 Hz.
-        unsafe { rust_wiiuse_poll(devices, connected) };
+        devices.poll();
 
-        if let Some(state) = unsafe { get_state(devices, 0, connected as usize) } {
+        if let Some(state) = devices.state(0) {
             // Print each button once, on its press transition.
             for (button, label) in BUTTONS {
                 if state.buttons.just_pressed.contains(button) {
@@ -122,8 +118,4 @@ fn main() {
 
         thread::sleep(POLL_SLEEP);
     }
-
-    // The loop intentionally runs until the process is stopped. If it is
-    // later changed to have a normal exit condition, call
-    // rust_wiiuse_cleanup(devices, MAX_WIIMOTES) before returning.
 }
