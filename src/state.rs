@@ -189,7 +189,11 @@ impl WiimoteState {
             raw.wiimote_buttons_released,
         );
         let accelerometer = Accelerometer {
-            raw: [raw.wiimote_accel_x, raw.wiimote_accel_y, raw.wiimote_accel_z],
+            raw: [
+                raw.wiimote_accel_x,
+                raw.wiimote_accel_y,
+                raw.wiimote_accel_z,
+            ],
             gforce: [
                 raw.wiimote_gforce_x,
                 raw.wiimote_gforce_y,
@@ -204,7 +208,11 @@ impl WiimoteState {
                     raw.nunchuk_buttons_released,
                 ),
                 accelerometer: Accelerometer {
-                    raw: [raw.nunchuk_accel_x, raw.nunchuk_accel_y, raw.nunchuk_accel_z],
+                    raw: [
+                        raw.nunchuk_accel_x,
+                        raw.nunchuk_accel_y,
+                        raw.nunchuk_accel_z,
+                    ],
                     gforce: [
                         raw.nunchuk_gforce_x,
                         raw.nunchuk_gforce_y,

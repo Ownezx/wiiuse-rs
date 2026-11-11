@@ -5,7 +5,12 @@ use std::mem::MaybeUninit;
 use std::os::raw::c_int;
 use std::ptr::NonNull;
 
-#[allow(non_camel_case_types, non_snake_case, non_upper_case_globals, dead_code)]
+#[allow(
+    non_camel_case_types,
+    non_snake_case,
+    non_upper_case_globals,
+    dead_code
+)]
 mod bindings {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
@@ -58,7 +63,9 @@ impl NativeDevices {
         let found = unsafe {
             bindings::rust_wiiuse_find(self.devices.as_ptr(), self.capacity, timeout_seconds)
         };
-        usize::try_from(found).unwrap_or(0).min(self.capacity as usize)
+        usize::try_from(found)
+            .unwrap_or(0)
+            .min(self.capacity as usize)
     }
 
     pub(crate) fn connect(&mut self, found: usize) -> usize {
@@ -69,9 +76,8 @@ impl NativeDevices {
 
         // SAFETY: `count` is bounded by the allocated capacity and refers to
         // entries populated by the preceding discovery call.
-        let connected = unsafe {
-            bindings::rust_wiiuse_connect(self.devices.as_ptr(), count as c_int)
-        };
+        let connected =
+            unsafe { bindings::rust_wiiuse_connect(self.devices.as_ptr(), count as c_int) };
         usize::try_from(connected).unwrap_or(0).min(count)
     }
 
@@ -82,17 +88,10 @@ impl NativeDevices {
         }
 
         // SAFETY: pointer is live and count cannot exceed the allocated capacity.
-        let _ = unsafe {
-            bindings::rust_wiiuse_poll(self.devices.as_ptr(), count as c_int)
-        };
+        let _ = unsafe { bindings::rust_wiiuse_poll(self.devices.as_ptr(), count as c_int) };
     }
 
-    pub(crate) fn motion_sensing(
-        &mut self,
-        index: usize,
-        connected: usize,
-        enabled: bool,
-    ) {
+    pub(crate) fn motion_sensing(&mut self, index: usize, connected: usize, enabled: bool) {
         let count = connected.min(self.capacity as usize);
         if index >= count {
             return;
@@ -124,12 +123,7 @@ impl NativeDevices {
         // bounded by capacity; and out points to writable storage of the exact
         // snapshot type declared by the C shim header.
         let result = unsafe {
-            bindings::rust_wiiuse_get_state(
-                self.devices.as_ptr(),
-                index,
-                count,
-                out.as_mut_ptr(),
-            )
+            bindings::rust_wiiuse_get_state(self.devices.as_ptr(), index, count, out.as_mut_ptr())
         };
         if result == 0 {
             return None;

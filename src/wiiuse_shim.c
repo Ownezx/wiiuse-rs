@@ -29,7 +29,8 @@ int rust_wiiuse_poll(void *devices, int count) {
   return wiiuse_poll((struct wiimote_t **)devices, count);
 }
 
-void rust_wiiuse_motion_sensing(void *devices, int count, int index, int enabled) {
+void rust_wiiuse_motion_sensing(void *devices, int count, int index,
+                                int enabled) {
   struct wiimote_t **wm = (struct wiimote_t **)devices;
 
   if (wm == 0 || count <= 0 || index < 0 || index >= count || wm[index] == 0) {

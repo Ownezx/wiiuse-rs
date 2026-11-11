@@ -71,10 +71,8 @@ impl WiimoteSet {
             return Err(InitError::ZeroCapacity);
         }
 
-        let native_capacity =
-            i32::try_from(capacity).map_err(|_| InitError::CapacityTooLarge)?;
-        let native =
-            ffi::NativeDevices::new(native_capacity).ok_or(InitError::AllocationFailed)?;
+        let native_capacity = i32::try_from(capacity).map_err(|_| InitError::CapacityTooLarge)?;
+        let native = ffi::NativeDevices::new(native_capacity).ok_or(InitError::AllocationFailed)?;
 
         Ok(Self {
             native,
@@ -142,8 +140,7 @@ impl WiimoteSet {
         if index >= self.connected {
             return false;
         }
-        self.native
-            .motion_sensing(index, self.connected, enabled);
+        self.native.motion_sensing(index, self.connected, enabled);
         true
     }
 

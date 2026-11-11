@@ -47,8 +47,7 @@ int rust_wiiuse_get_state(void *devices, int index, int count,
   }
 
   out->has_nunchuk = 1;
-  out->nunchuk_buttons_down =
-      (uint8_t)(nunchuk->btns & NUNCHUK_BUTTON_ALL);
+  out->nunchuk_buttons_down = (uint8_t)(nunchuk->btns & NUNCHUK_BUTTON_ALL);
   out->nunchuk_buttons_held =
       (uint8_t)(nunchuk->btns_held & NUNCHUK_BUTTON_ALL);
   out->nunchuk_buttons_released =
