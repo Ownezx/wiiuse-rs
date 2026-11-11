@@ -22,9 +22,6 @@ cargo build
 cargo run --example single_remote
 ```
 
-The example prints button press transitions and streams accelerometer readings
-continuously at 20 Hz.
-
 ## License
 
 The native `wiiuse` library is GPL-3.0-or-later. Check the licensing terms

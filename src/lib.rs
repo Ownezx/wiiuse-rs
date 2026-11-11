@@ -12,7 +12,8 @@ mod state;
 use std::time::Duration;
 
 pub use state::{
-    Accelerometer, ButtonState, NunchukButtons, NunchukState, WiimoteButtons, WiimoteState,
+    Accelerometer, ButtonState, IrDot, IrState, NunchukButtons, NunchukState, WiimoteButtons,
+    WiimoteState,
 };
 
 /// Errors returned when allocating a Wii Remote set.
@@ -141,6 +142,18 @@ impl WiimoteSet {
             return false;
         }
         self.native.motion_sensing(index, self.connected, enabled);
+        true
+    }
+
+    /// Enables or disables the Wii Remote infrared camera for a connected slot.
+    ///
+    /// The vendored wiiuse initialization selects IR sensitivity level 3 by
+    /// default. Returns `false` when `index` is not a connected controller slot.
+    pub fn ir_sensing(&mut self, index: usize, enabled: bool) -> bool {
+        if index >= self.connected {
+            return false;
+        }
+        self.native.ir_sensing(index, self.connected, enabled);
         true
     }
 

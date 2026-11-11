@@ -27,6 +27,18 @@ pub(crate) struct RawState {
     pub wiimote_gforce_x: f32,
     pub wiimote_gforce_y: f32,
     pub wiimote_gforce_z: f32,
+    pub ir_enabled: u8,
+    pub ir_num_dots: u8,
+    pub ir_x: i32,
+    pub ir_y: i32,
+    pub ir_vres_x: u32,
+    pub ir_vres_y: u32,
+    pub ir_dot_visible: [u8; 4],
+    pub ir_dot_size: [u8; 4],
+    pub ir_dot_x: [u32; 4],
+    pub ir_dot_y: [u32; 4],
+    pub ir_dot_rx: [i16; 4],
+    pub ir_dot_ry: [i16; 4],
     pub has_nunchuk: u8,
     pub nunchuk_buttons_down: u8,
     pub nunchuk_buttons_held: u8,
@@ -109,6 +121,24 @@ impl NativeDevices {
         }
     }
 
+    pub(crate) fn ir_sensing(&mut self, index: usize, connected: usize, enabled: bool) {
+        let count = connected.min(self.capacity as usize);
+        if index >= count {
+            return;
+        }
+
+        // SAFETY: index and count are checked against the owned device array;
+        // the C shim repeats the same validation before accessing the device.
+        unsafe {
+            bindings::rust_wiiuse_ir_sensing(
+                self.devices.as_ptr(),
+                count as c_int,
+                index as c_int,
+                if enabled { 1 } else { 0 },
+            );
+        }
+    }
+
     pub(crate) fn state(&self, index: usize, connected: usize) -> Option<RawState> {
         let count = connected.min(self.capacity as usize);
         if index >= count {
@@ -142,6 +172,18 @@ impl NativeDevices {
             wiimote_gforce_x: out.wiimote_gforce_x,
             wiimote_gforce_y: out.wiimote_gforce_y,
             wiimote_gforce_z: out.wiimote_gforce_z,
+            ir_enabled: out.ir_enabled,
+            ir_num_dots: out.ir_num_dots,
+            ir_x: out.ir_x,
+            ir_y: out.ir_y,
+            ir_vres_x: out.ir_vres_x,
+            ir_vres_y: out.ir_vres_y,
+            ir_dot_visible: out.ir_dot_visible,
+            ir_dot_size: out.ir_dot_size,
+            ir_dot_x: out.ir_dot_x,
+            ir_dot_y: out.ir_dot_y,
+            ir_dot_rx: out.ir_dot_rx,
+            ir_dot_ry: out.ir_dot_ry,
             has_nunchuk: out.has_nunchuk,
             nunchuk_buttons_down: out.nunchuk_buttons_down,
             nunchuk_buttons_held: out.nunchuk_buttons_held,

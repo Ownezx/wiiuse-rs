@@ -39,6 +39,15 @@ void rust_wiiuse_motion_sensing(void *devices, int count, int index,
   wiiuse_motion_sensing(wm[index], enabled != 0);
 }
 
+void rust_wiiuse_ir_sensing(void *devices, int count, int index, int enabled) {
+  struct wiimote_t **wm = (struct wiimote_t **)devices;
+
+  if (wm == 0 || count <= 0 || index < 0 || index >= count || wm[index] == 0) {
+    return;
+  }
+  wiiuse_set_ir(wm[index], enabled != 0);
+}
+
 void rust_wiiuse_cleanup(void *devices, int count) {
   if (devices == 0 || count <= 0) {
     return;

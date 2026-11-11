@@ -30,6 +30,25 @@ int rust_wiiuse_get_state(void *devices, int index, int count,
   out->wiimote_gforce_y = wm->gforce.y;
   out->wiimote_gforce_z = wm->gforce.z;
 
+  out->ir_enabled = (wm->state & WIIMOTE_STATE_IR) != 0;
+  if (out->ir_enabled) {
+    int i;
+    out->ir_num_dots = wm->ir.num_dots;
+    out->ir_x = wm->ir.x;
+    out->ir_y = wm->ir.y;
+    out->ir_vres_x = wm->ir.vres[0];
+    out->ir_vres_y = wm->ir.vres[1];
+
+    for (i = 0; i < 4; ++i) {
+      out->ir_dot_visible[i] = wm->ir.dot[i].visible != 0;
+      out->ir_dot_size[i] = wm->ir.dot[i].size;
+      out->ir_dot_x[i] = wm->ir.dot[i].x;
+      out->ir_dot_y[i] = wm->ir.dot[i].y;
+      out->ir_dot_rx[i] = wm->ir.dot[i].rx;
+      out->ir_dot_ry[i] = wm->ir.dot[i].ry;
+    }
+  }
+
   /* A Nunchuk may be attached directly or through MotionPlus passthrough. */
   switch (wm->exp.type) {
   case EXP_NUNCHUK:

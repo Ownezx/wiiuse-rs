@@ -5,7 +5,7 @@ use wiiuse_rs::{WiimoteButtons, WiimoteSet};
 
 const MAX_WIIMOTES: i32 = 1;
 const FIND_TIMEOUT_SECONDS: i32 = 10;
-const A_LONG_PRESS: Duration = Duration::from_secs(2);
+const LONG_PRESS: Duration = Duration::from_secs(1);
 const POLL_SLEEP: Duration = Duration::from_millis(2);
 const ACCEL_PRINT_INTERVAL: Duration = Duration::from_millis(50); // 20 lines/second
 
@@ -49,20 +49,25 @@ fn main() {
         return;
     }
 
-    // Enable the Wii Remote accelerometer. No Nunchuk is required.
+    // Enable the Wii Remote accelerometer and IR sensor.
     devices.motion_sensing(0, true);
+    devices.ir_sensing(0, true);
 
     println!("Connected.");
     println!("Press any button to print its name.");
-    println!("Hold A for 2 seconds to start the accelerometer feed; release A to stop it.");
+    println!("Hold A for 1 second to start the accelerometer feed; release A to stop it.");
+    println!("Hold B for 1 second to start the IR feed; release B to stop it.");
 
     let mut a_press_started: Option<Instant> = None;
     let mut accelerometer_feed_active = false;
+    let mut b_press_started: Option<Instant> = None;
+    let mut ir_feed_active = false;
     let mut next_accelerometer_print = Instant::now();
+    let mut next_ir_print = Instant::now();
 
     loop {
-        // Poll frequently to keep input latency low. The feed itself is
-        // throttled separately so it prints at a readable 20 Hz.
+        // Poll frequently to keep input latency low. The feeds themselves are
+        // throttled separately so they print at a readable 20 Hz.
         devices.poll();
 
         if let Some(state) = devices.state(0) {
@@ -73,8 +78,7 @@ fn main() {
                 }
             }
 
-            // Treat either mask as down. This is robust to wiiuse reporting
-            // newly-pressed and continuously-held bits separately.
+            // A-button long press controls the accelerometer feed.
             let a_is_down = state.buttons.down.contains(WiimoteButtons::A)
                 || state.buttons.held.contains(WiimoteButtons::A);
 
@@ -88,10 +92,10 @@ fn main() {
                 // initial press-transition report.
                 let started = *a_press_started.get_or_insert_with(Instant::now);
 
-                if !accelerometer_feed_active && started.elapsed() >= A_LONG_PRESS {
+                if !accelerometer_feed_active && started.elapsed() >= LONG_PRESS {
                     accelerometer_feed_active = true;
                     next_accelerometer_print = Instant::now();
-                    println!("A held for 2 seconds — accelerometer feed started.");
+                    println!("A held for 1 second — accelerometer feed started.");
                     println!("Release A to stop the feed.");
                 }
             } else if a_press_started.take().is_some() {
@@ -101,6 +105,46 @@ fn main() {
                 accelerometer_feed_active = false;
             }
 
+            // B-button long press controls the IR position feed.
+            let b_is_down = state.buttons.down.contains(WiimoteButtons::B)
+                || state.buttons.held.contains(WiimoteButtons::B);
+
+            if state.buttons.just_pressed.contains(WiimoteButtons::B) {
+                b_press_started = Some(Instant::now());
+                ir_feed_active = false;
+            }
+
+            if b_is_down {
+                let started = *b_press_started.get_or_insert_with(Instant::now);
+
+                if !ir_feed_active && started.elapsed() >= LONG_PRESS {
+                    ir_feed_active = true;
+                    next_ir_print = Instant::now();
+                    println!("B held for 1 second — IR feed started.");
+                    println!("Release B to stop the feed.");
+                }
+            } else if b_press_started.take().is_some() {
+                if ir_feed_active {
+                    println!("B released — IR feed stopped.");
+                }
+                ir_feed_active = false;
+            }
+
+            // Print estimated IR position at 20 Hz while B's feed is active.
+            if ir_feed_active && Instant::now() >= next_ir_print {
+                match state.ir.pointer {
+                    Some([x, y]) => {
+                        println!("IR position: X={x}, Y={y}");
+                    }
+                    None => {
+                        println!("IR position: unavailable");
+                    }
+                }
+
+                next_ir_print = Instant::now() + ACCEL_PRINT_INTERVAL;
+            }
+
+            // Print accelerometer readings at 20 Hz while A's feed is active.
             if accelerometer_feed_active && Instant::now() >= next_accelerometer_print {
                 let accel = state.accelerometer;
                 println!(
@@ -118,4 +162,7 @@ fn main() {
 
         thread::sleep(POLL_SLEEP);
     }
+
+    // The loop intentionally runs until the process is stopped.
+    // WiimoteSet handles native cleanup automatically when dropped.
 }

@@ -30,7 +30,8 @@ extern "C" {
  */
 
 /**
- * @brief Fixed-layout snapshot of the latest Wii Remote and Nunchuk state.
+ * @brief Fixed-layout snapshot of the latest Wii Remote, IR camera, and
+ *        Nunchuk state.
  *
  * This structure contains a copy of the controller state, allowing Rust
  * to access controller data without depending on native wiiuse structures
@@ -41,6 +42,9 @@ extern "C" {
  * Accelerometer values are provided in two representations:
  * - Raw sensor readings as unsigned 16-bit integers.
  * - Acceleration expressed as G-force values using 32-bit floats.
+ *
+ * IR fields contain the camera status, estimated cursor position, resolution,
+ * and information about up to four detected IR dots.
  *
  * Nunchuk fields are meaningful only when has_nunchuk is nonzero.
  *
@@ -101,6 +105,96 @@ typedef struct rust_wiiuse_state_t {
    * @brief Wii Remote Z-axis acceleration in G-force units.
    */
   float wiimote_gforce_z;
+
+  /**
+   * @brief Indicates whether the Wii Remote infrared camera is enabled.
+   *
+   * Nonzero if IR sensing is enabled.
+   * Zero otherwise.
+   */
+  uint8_t ir_enabled;
+
+  /**
+   * @brief Number of currently visible infrared camera dots.
+   *
+   * The Wii Remote IR camera can detect up to four IR dots.
+   */
+  uint8_t ir_num_dots;
+
+  /**
+   * @brief Estimated infrared cursor X coordinate.
+   *
+   * Contains the estimated pointer position calculated by wiiuse.
+   * Its coordinate range depends on the configured IR resolution.
+   */
+  int32_t ir_x;
+
+  /**
+   * @brief Estimated infrared cursor Y coordinate.
+   *
+   * Contains the estimated pointer position calculated by wiiuse.
+   * Its coordinate range depends on the configured IR resolution.
+   */
+  int32_t ir_y;
+
+  /**
+   * @brief Horizontal infrared camera resolution.
+   *
+   * Represents the configured horizontal coordinate range.
+   */
+  uint32_t ir_vres_x;
+
+  /**
+   * @brief Vertical infrared camera resolution.
+   *
+   * Represents the configured vertical coordinate range.
+   */
+  uint32_t ir_vres_y;
+
+  /**
+   * @brief Visibility flags for the four infrared camera dots.
+   *
+   * Each element is nonzero if the corresponding dot is visible.
+   * Zero indicates that the dot is not currently detected.
+   */
+  uint8_t ir_dot_visible[4];
+
+  /**
+   * @brief Reported size of each infrared camera dot.
+   *
+   * Each element corresponds to one of the four possible IR dots.
+   */
+  uint8_t ir_dot_size[4];
+
+  /**
+   * @brief Interpolated X coordinates for the four infrared camera dots.
+   *
+   * Each element corresponds to one of the four possible IR dots.
+   */
+  uint32_t ir_dot_x[4];
+
+  /**
+   * @brief Interpolated Y coordinates for the four infrared camera dots.
+   *
+   * Each element corresponds to one of the four possible IR dots.
+   */
+  uint32_t ir_dot_y[4];
+
+  /**
+   * @brief Raw X coordinates for the four infrared camera dots.
+   *
+   * Raw sensor coordinates normally fall within the 0..1023 range.
+   * Each element corresponds to one of the four possible IR dots.
+   */
+  int16_t ir_dot_rx[4];
+
+  /**
+   * @brief Raw Y coordinates for the four infrared camera dots.
+   *
+   * Raw sensor coordinates normally fall within the 0..767 range.
+   * Each element corresponds to one of the four possible IR dots.
+   */
+  int16_t ir_dot_ry[4];
 
   /**
    * @brief Indicates whether a Nunchuk extension is connected.
@@ -225,8 +319,8 @@ int rust_wiiuse_connect(void *devices, int count);
  * state.
  *
  * This function should be called regularly while the controllers are
- * connected. Button transitions, accelerometer readings, and extension
- * state are updated through polling.
+ * connected. Button transitions, accelerometer readings, IR camera data,
+ * and extension state are updated through polling.
  *
  * @param devices Pointer returned by rust_wiiuse_init().
  * @param count Number of connected devices to poll.
@@ -256,13 +350,32 @@ void rust_wiiuse_motion_sensing(void *devices, int count, int index,
                                 int enabled);
 
 /**
+ * @brief Enable or disable Wii Remote infrared camera reporting.
+ *
+ * Controls the infrared camera for a specific Wii Remote.
+ *
+ * When enabled, the camera can report detected IR dots and an estimated
+ * cursor position. An external infrared source, such as a powered sensor
+ * bar, is required for the camera to detect IR points.
+ *
+ * @param devices Pointer returned by rust_wiiuse_init().
+ * @param count Number of valid devices in the device array.
+ * @param index Zero-based index of the Wii Remote to configure.
+ *              Must be less than count.
+ * @param enabled Nonzero to enable IR sensing, zero to disable it.
+ *
+ * @note Enabling IR sensing does not require a Wii or Wii U console.
+ */
+void rust_wiiuse_ir_sensing(void *devices, int count, int index, int enabled);
+
+/**
  * @brief Copy the latest controller state into a Rust-compatible snapshot.
  *
  * Retrieves the most recently polled state for the specified Wii Remote
  * and copies it into the caller-provided output structure.
  *
- * The returned snapshot contains button states and accelerometer readings
- * for the Wii Remote and, when connected, its Nunchuk extension.
+ * The returned snapshot contains button states, accelerometer readings,
+ * IR camera data, and, when connected, Nunchuk extension data.
  *
  * No pointers to native wiiuse structures are exposed to the caller.
  *
@@ -280,6 +393,9 @@ void rust_wiiuse_motion_sensing(void *devices, int count, int index,
  *
  * @note The snapshot represents the most recently processed controller
  *       state. Call rust_wiiuse_poll() regularly to keep it updated.
+ *
+ * @note When IR sensing is disabled or no IR dots are visible, the IR
+ *       coordinates should not be treated as a valid pointer position.
  *
  * @note When no Nunchuk is connected, has_nunchuk is zero and the Nunchuk
  *       fields should not be treated as valid sensor data.

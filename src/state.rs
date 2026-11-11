@@ -172,11 +172,41 @@ pub struct NunchukState {
     pub accelerometer: Accelerometer,
 }
 
+/// One of the four infrared sources reported by the Wii Remote camera.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct IrDot {
+    /// Whether this source is currently visible to the camera.
+    pub visible: bool,
+    /// Interpolated coordinates reported by wiiuse.
+    pub position: [u32; 2],
+    /// Raw camera coordinates (`x`: 0..1023, `y`: 0..767) when visible.
+    pub raw_position: [i16; 2],
+    /// Reported dot size (0..15 in extended mode).
+    pub size: u8,
+}
+
+/// Infrared tracking state from the Wii Remote camera.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct IrState {
+    /// Whether IR tracking is enabled on the Wii Remote.
+    pub enabled: bool,
+    /// Number of currently visible IR sources (0..=4).
+    pub visible_dots: u8,
+    /// Calculated pointer position, present when at least one source is visible.
+    pub pointer: Option<[i32; 2]>,
+    /// Virtual coordinate extent configured by wiiuse.
+    pub resolution: [u32; 2],
+    /// All four camera slots. Ignore coordinates for dots where `visible` is false.
+    pub dots: [IrDot; 4],
+}
+
 /// Snapshot copied from a Wii Remote after polling.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct WiimoteState {
     pub buttons: ButtonState<WiimoteButtons>,
     pub accelerometer: Accelerometer,
+    /// Infrared camera state, including whether tracking is enabled and visible dots.
+    pub ir: IrState,
     /// `Some` for a directly attached Nunchuk or MotionPlus Nunchuk passthrough.
     pub nunchuk: Option<NunchukState>,
 }
@@ -199,6 +229,23 @@ impl WiimoteState {
                 raw.wiimote_gforce_y,
                 raw.wiimote_gforce_z,
             ],
+        };
+        let ir_dots = std::array::from_fn(|index| IrDot {
+            visible: raw.ir_dot_visible[index] != 0,
+            position: [raw.ir_dot_x[index], raw.ir_dot_y[index]],
+            raw_position: [raw.ir_dot_rx[index], raw.ir_dot_ry[index]],
+            size: raw.ir_dot_size[index],
+        });
+        let ir = IrState {
+            enabled: raw.ir_enabled != 0,
+            visible_dots: raw.ir_num_dots,
+            pointer: if raw.ir_enabled != 0 && raw.ir_num_dots > 0 {
+                Some([raw.ir_x, raw.ir_y])
+            } else {
+                None
+            },
+            resolution: [raw.ir_vres_x, raw.ir_vres_y],
+            dots: ir_dots,
         };
         let nunchuk = if raw.has_nunchuk != 0 {
             Some(NunchukState {
@@ -227,6 +274,7 @@ impl WiimoteState {
         Self {
             buttons,
             accelerometer,
+            ir,
             nunchuk,
         }
     }
