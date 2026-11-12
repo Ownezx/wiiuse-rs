@@ -12,7 +12,8 @@ mod state;
 use std::time::Duration;
 
 pub use state::{
-    Accelerometer, ButtonState, NunchukButtons, NunchukState, WiimoteButtons, WiimoteState,
+    Accelerometer, ButtonState, Joystick, NunchukButtons, NunchukState, WiimoteButtons,
+    WiimoteState,
 };
 
 /// Errors returned when allocating a Wii Remote set.

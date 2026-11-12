@@ -37,6 +37,8 @@ pub(crate) struct RawState {
     pub nunchuk_gforce_x: f32,
     pub nunchuk_gforce_y: f32,
     pub nunchuk_gforce_z: f32,
+    pub nunchuk_joystick_x: f32,
+    pub nunchuk_joystick_y: f32,
 }
 
 /// Owns the opaque pointer returned by `rust_wiiuse_init`.
@@ -152,6 +154,8 @@ impl NativeDevices {
             nunchuk_gforce_x: out.nunchuk_gforce_x,
             nunchuk_gforce_y: out.nunchuk_gforce_y,
             nunchuk_gforce_z: out.nunchuk_gforce_z,
+            nunchuk_joystick_x: out.nunchuk_joystick_x,
+            nunchuk_joystick_y: out.nunchuk_joystick_y,
         })
     }
 }

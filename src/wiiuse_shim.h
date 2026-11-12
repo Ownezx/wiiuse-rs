@@ -157,6 +157,16 @@ typedef struct rust_wiiuse_state_t {
    */
   float nunchuk_gforce_z;
 
+  /**
+   * @brief Calibrated Nunchuk joystick horizontal position.
+   */
+  float nunchuk_joystick_x;
+
+  /**
+   * @brief Calibrated Nunchuk joystick vertical position.
+   */
+  float nunchuk_joystick_y;
+
 } rust_wiiuse_state_t;
 
 /**

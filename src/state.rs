@@ -165,11 +165,25 @@ pub struct Accelerometer {
     pub gforce: [f32; 3],
 }
 
+/// Calibrated Nunchuk joystick position.
+///
+/// Both axes are normalized by wiiuse to the range `-1.0..=1.0`.
+/// `x` is negative to the left and positive to the right; `y` is negative
+/// down and positive up. The values include wiiuse's joystick calibration.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Joystick {
+    /// Horizontal stick position: negative is left, positive is right.
+    pub x: f32,
+    /// Vertical stick position: negative is down, positive is up.
+    pub y: f32,
+}
+
 /// Snapshot of a connected Nunchuk.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct NunchukState {
     pub buttons: ButtonState<NunchukButtons>,
     pub accelerometer: Accelerometer,
+    pub joystick: Joystick,
 }
 
 /// Snapshot copied from a Wii Remote after polling.
@@ -218,6 +232,10 @@ impl WiimoteState {
                         raw.nunchuk_gforce_y,
                         raw.nunchuk_gforce_z,
                     ],
+                },
+                joystick: Joystick {
+                    x: raw.nunchuk_joystick_x,
+                    y: raw.nunchuk_joystick_y,
                 },
             })
         } else {

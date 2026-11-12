@@ -58,6 +58,8 @@ int rust_wiiuse_get_state(void *devices, int index, int count,
   out->nunchuk_gforce_x = nunchuk->gforce.x;
   out->nunchuk_gforce_y = nunchuk->gforce.y;
   out->nunchuk_gforce_z = nunchuk->gforce.z;
+  out->nunchuk_joystick_x = nunchuk->js.x;
+  out->nunchuk_joystick_y = nunchuk->js.y;
 
   return 1;
 }
